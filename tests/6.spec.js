@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 import { LoginPage } from '../src/pages/login.page.js';
 import { HomePage } from '../src/pages/home.page.js';
 import { EditorPage } from '../src/pages/editor.page.js';
@@ -10,92 +9,92 @@ test.describe('RealWorld Functional Tests', () => {
 
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
-    await loginPage.open();
-    await loginPage.login('raiyskiy2@ya.ru', '85-36');
+
+    const id = Date.now();
+    const name = 'User' + id;
+    const email = 'user' + id + '@test.com';
+    const pass = '12345';
+
+    await loginPage.register(name, email, pass);
   });
 
- 
-  test('Создание статьи', async ({ page }) => {
+  test('Пользователь может создать статью', async ({ page }) => {
     const homePage = new HomePage(page);
     const editorPage = new EditorPage(page);
     const articlePage = new ArticlePage(page);
 
     await homePage.clickNewArticle();
-    
+
     const title = 'Test Article ' + Date.now();
     await editorPage.fillArticle(title, 'Description', 'Article body text');
     await editorPage.publish();
 
-    const articleTitle = await articlePage.getTitle();
-    await expect(articleTitle).toHaveText(title);
+    await expect(articlePage.title).toHaveText(title);
   });
 
- 
-test('Добавление комментария', async ({ page }) => {
-  const homePage = new HomePage(page);
-  const articlePage = new ArticlePage(page);
+  test('Пользователь может добавить комментарий', async ({ page }) => {
+    const homePage = new HomePage(page);
+    const editorPage = new EditorPage(page);
+    const articlePage = new ArticlePage(page);
 
-  await homePage.open();
-  await page.getByRole('button', { name: 'Global Feed' }).click();
-  await homePage.clickFirstArticle();
+    await homePage.clickNewArticle();
+    const title = 'Article for comment ' + Date.now();
+    await editorPage.fillArticle(title, 'Description', 'Body');
+    await editorPage.publish();
 
-  const commentText = 'Test comment ' + Date.now();
-  await articlePage.addComment(commentText);
+    await expect(articlePage.title).toBeVisible();
 
-  const comments = await articlePage.getComments();
-  await expect(comments.first()).toContainText(commentText);
-});
+    const commentText = 'Test comment ' + Date.now();
+    await articlePage.addComment(commentText);
 
- 
-  test('Редактирование профиля', async ({ page }) => {
+    await expect(articlePage.comments.first()).toContainText(commentText);
+  });
+
+  test('Пользователь может отредактировать профиль', async ({ page }) => {
     const homePage = new HomePage(page);
     const settingsPage = new SettingsPage(page);
 
-    await homePage.open();
     await homePage.clickSettings();
+    await expect(settingsPage.bioInput).toBeVisible();
 
     const newBio = 'Bio updated ' + Date.now();
     await settingsPage.updateBio(newBio);
     await settingsPage.saveSettings();
 
-    await expect(page.getByRole('textbox', { name: 'Short bio' })).toHaveValue(newBio);
+    await expect(settingsPage.bioInput).toHaveValue(newBio);
   });
 
+  test('Пользователь может поставить лайк статье', async ({ page }) => {
+    const homePage = new HomePage(page);
+    const articlePage = new ArticlePage(page);
 
-test('Лайк статьи', async ({ page }) => {
-  const homePage = new HomePage(page);
+    await homePage.open();
+    await homePage.clickGlobalFeed();
+    await homePage.clickFirstArticle();
 
-  await homePage.open();
-  await page.getByRole('button', { name: 'Global Feed' }).click();
-  
-  const likeButton = await homePage.getLikeCount();
-  const countBefore = await likeButton.textContent();
-  
-  await homePage.clickLike();
-  await page.waitForTimeout(500);
-  
-  const countAfter = await likeButton.textContent();
-  expect(countBefore).not.toBe(countAfter);
-});
+    await articlePage.likeArticle();
 
+    await expect(articlePage.favoriteButton).toHaveClass(/active/);
+  });
 
-test('Редактирование статьи', async ({ page }) => {
-  const homePage = new HomePage(page);
-  const editorPage = new EditorPage(page);
-  const articlePage = new ArticlePage(page);
+  test('Пользователь может редактировать статью', async ({ page }) => {
+    const homePage = new HomePage(page);
+    const editorPage = new EditorPage(page);
+    const articlePage = new ArticlePage(page);
 
+    await homePage.clickNewArticle();
+    const title = 'Article ' + Date.now();
+    await editorPage.fillArticle(title, 'Description', 'Body');
+    await editorPage.publish();
 
-  await homePage.clickNewArticle();
-  const title = 'Article ' + Date.now();
-  await editorPage.fillArticle(title, 'Description', 'Body');
-  await editorPage.publish();
+    await expect(articlePage.title).toBeVisible();
 
-  await page.getByRole('button', { name: 'Edit Article' }).first().click();
-  const newTitle = 'Updated ' + Date.now();
-  await page.getByRole('textbox', { name: 'Article Title' }).fill(newTitle);
-  await editorPage.update();  // вместо publish()
+    await articlePage.editArticle();
+    const newTitle = 'Updated ' + Date.now();
+    await editorPage.titleInput.fill(newTitle);
+    await editorPage.update();
 
+    await expect(articlePage.title).toHaveText(newTitle);
+  });
 
-  await expect(page.locator('h1').first()).toHaveText(newTitle);
-});
 });

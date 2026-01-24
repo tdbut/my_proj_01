@@ -1,6 +1,10 @@
- export class HomePage {
+export class HomePage {
   constructor(page) {
     this.page = page;
+    this.newArticleLink = page.getByRole('link', { name: 'New Article' });
+    this.globalFeedButton = page.getByRole('button', { name: 'Global Feed' });
+    this.firstArticle = page.locator('.preview-link').first();
+    this.firstLikeButton = page.locator('.article-preview button').first();
   }
 
   async open() {
@@ -8,24 +12,26 @@
   }
 
   async clickNewArticle() {
-    await this.page.getByRole('link', { name: 'New Article' }).click();
+    await this.newArticleLink.click();
   }
 
- async clickSettings() {
-  await this.page.goto('https://realworld.qa.guru/#/settings');
+  async clickGlobalFeed() {
+    await this.globalFeedButton.click();
   }
 
   async clickFirstArticle() {
-    await this.page.locator('.preview-link').first().click();
+    await this.firstArticle.click();
   }
 
   async clickLike() {
-    await this.page.locator('.article-preview button').first().click();
+    await this.firstLikeButton.click();
   }
 
   async getLikeCount() {
-    return this.page.locator('.article-preview button').first();
+    return this.firstLikeButton;
+  }
+
+  async clickSettings() {
+    await this.page.goto('https://realworld.qa.guru/#/settings');
   }
 }
-
-
