@@ -65,17 +65,25 @@ test.describe('RealWorld Functional Tests', () => {
   });
 
   test('Пользователь может поставить лайк статье', async ({ page }) => {
-    const homePage = new HomePage(page);
-    const articlePage = new ArticlePage(page);
+  const homePage = new HomePage(page);
+  const editorPage = new EditorPage(page);
+  const articlePage = new ArticlePage(page);
 
-    await homePage.open();
-    await homePage.clickGlobalFeed();
-    await homePage.clickFirstArticle();
+  await homePage.clickNewArticle();
+  const title = 'Article for like ' + Date.now();
+  await editorPage.fillArticle(title, 'Description', 'Body');
+  await editorPage.publish();
 
-    await articlePage.likeArticle();
+  await expect(articlePage.title).toBeVisible();
 
-    await expect(articlePage.favoriteButton).toHaveClass(/active/);
-  });
+  await homePage.open();
+  await homePage.clickGlobalFeed();
+
+  await expect(homePage.firstLikeButton).toBeVisible();
+  await homePage.clickLike();
+
+  await expect(homePage.firstLikeButton).toHaveClass(/active/);
+});
 
   test('Пользователь может редактировать статью', async ({ page }) => {
     const homePage = new HomePage(page);
