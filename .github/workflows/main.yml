@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-# ручной запуск
- workflow_dispatch:
+  # ручной запуск
+  workflow_dispatch:
 
 jobs:
   my_proj_01Tests:
