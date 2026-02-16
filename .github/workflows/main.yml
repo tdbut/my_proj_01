@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -29,22 +33,68 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run API tests
-        run: npx playwright test tests/api.spec.js --reporter=list
+        run: npx playwright test tests/api.spec.js --reporter=list,allure-playwright
         continue-on-error: true
 
       - name: Run UI tests
-        run: npx playwright test tests/uiTests.spec.js --reporter=list
+        run: npx playwright test tests/uiTests.spec.js --reporter=list,allure-playwright
         continue-on-error: true
 
       - name: Run Page Object tests
-        run: npx playwright test tests/page.object.tests.spec.js --reporter=list
+        run: npx playwright test tests/page.object.tests.spec.js --reporter=list,allure-playwright
         continue-on-error: true
 
-      - name: Generate HTML report
-        if: always()
-        run: npx playwright test --reporter=html || true
+      # --- Allure Report with History ---
 
-      - name: Upload test report
+      - name: Get Allure history from gh-pages
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Copy Allure history
+        if: always()
+        run: |
+          mkdir -p allure-results/history
+          cp -r gh-pages/history/* allure-results/history/ 2>/dev/null || true
+
+      - name: Generate Allure report
+        uses: simple-elf/allure-report-action@v1.12
+        if: always()
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Publish Allure report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
+
+      # --- Allure TestOps ---
+
+      - name: Upload results to Allure TestOps
+        if: always() && env.ALLURE_TESTOPS_TOKEN != ''
+        run: |
+          curl -fsSL https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -o allurectl
+          chmod +x allurectl
+          ./allurectl upload \
+            --endpoint ${{ secrets.ALLURE_TESTOPS_URL }} \
+            --token ${{ secrets.ALLURE_TESTOPS_TOKEN }} \
+            --project-id ${{ secrets.ALLURE_TESTOPS_PROJECT_ID }} \
+            --launch-name "Playwright Tests #${{ github.run_number }}" \
+            allure-results
+        env:
+          ALLURE_TESTOPS_TOKEN: ${{ secrets.ALLURE_TESTOPS_TOKEN }}
+
+      # --- Playwright HTML Report ---
+
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -60,6 +110,8 @@ jobs:
           path: test-results/
           retention-days: 7
 
+      # --- Telegram ---
+
       - name: Send Telegram notification
         if: always()
         run: |
@@ -71,10 +123,13 @@ jobs:
             STATUS="FAILED"
           fi
 
+          PAGES_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+
           MESSAGE="${EMOJI} *Playwright Tests — ${STATUS}*
           📦 Repository: \`${{ github.repository }}\`
           🌿 Branch: \`${{ github.ref_name }}\`
           👤 Author: ${{ github.actor }}
+          📊 [Allure Report](${PAGES_URL})
           🔗 [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
