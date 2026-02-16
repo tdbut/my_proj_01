@@ -60,38 +60,24 @@ jobs:
           path: test-results/
           retention-days: 7
 
+      - name: Send Telegram notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            EMOJI="✅"
+            STATUS="PASSED"
+          else
+            EMOJI="❌"
+            STATUS="FAILED"
+          fi
 
+          MESSAGE="${EMOJI} *Playwright Tests — ${STATUS}*
+          📦 Repository: \`${{ github.repository }}\`
+          🌿 Branch: \`${{ github.ref_name }}\`
+          👤 Author: ${{ github.actor }}
+          🔗 [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d parse_mode=Markdown \
+            -d text="${MESSAGE}"
