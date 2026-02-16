@@ -17,8 +17,11 @@ export class CatApiService {
             
             for (let i = 0; i < retries; i++) {
                 try {
-                    const queryParams = new URLSearchParams(params).toString();
-                    const url = `${this.baseURL}/images/search${queryParams ? '?' + queryParams : ''}`;
+                    // ИСПРАВЛЕНО: правильное формирование URL
+                    const queryString = Object.keys(params).length > 0 
+                        ? '?' + new URLSearchParams(params).toString()
+                        : '';
+                    const url = `${this.baseURL}/images/search${queryString}`;
                     
                     const response = await this.request.get(url, {
                         headers: this.getHeaders(),
@@ -61,6 +64,7 @@ export class CatApiService {
             
             for (let i = 0; i < retries; i++) {
                 try {
+                    // ИСПРАВЛЕНО: обычные скобки вместо литералов
                     const response = await this.request.get(
                         `${this.baseURL}/images/${imageId}`,
                         {
@@ -107,6 +111,7 @@ export class CatApiService {
             
             for (let i = 0; i < retries; i++) {
                 try {
+                    // ИСПРАВЛЕНО: обычные скобки
                     const response = await this.request.get(
                         `${this.baseURL}/breeds`,
                         {
@@ -151,6 +156,7 @@ export class CatApiService {
             
             for (let i = 0; i < retries; i++) {
                 try {
+                    // ИСПРАВЛЕНО: обычные скобки
                     const response = await this.request.get(
                         `${this.baseURL}/categories`,
                         {
@@ -191,6 +197,7 @@ export class CatApiService {
 
     async searchImagesByBreed(breedId, limit = 5) {
         return test.step(`GET /images/search?breed_ids=${breedId}`, async () => {
+            // ИСПРАВЛЕНО: обычные скобки
             const response = await this.request.get(
                 `${this.baseURL}/images/search?breed_ids=${breedId}&limit=${limit}`,
                 {

@@ -9,6 +9,8 @@ export default defineConfig({
 
   fullyParallel: true,
 
+  testMatch: '**/*.spec.js',
+  
   retries: 2,
 
   reporter: 'html',
@@ -19,7 +21,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     // @ts-ignore
-    trace: ['retain-on-failure', 'on-first-retry'],
+    trace:  'on-first-retry',
 
     actionTimeout: 10000,
   },

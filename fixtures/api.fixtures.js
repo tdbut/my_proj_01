@@ -1,28 +1,25 @@
 import { test as base } from '@playwright/test';
-import { CatApiService } from '../src/services/catapi.service';
-import { ImagesPage } from '../src/pages/images.page';
-import { BreedsPage } from '../src/pages/breeds.page';
-import { CategoriesPage } from '../src/pages/categories.page';
+import { CatApiService } from '../src/services/catapi.service.js';
 
 export const test = base.extend({
-    catApiService: async ({ request }, use) => {
+    apiRequest: async ({ request }, use) => {
         const service = new CatApiService(request);
         await use(service);
     },
-    
-    imagesPage: async ({ catApiService }, use) => {
-        const page = new ImagesPage(catApiService);
-        await use(page);
+
+    randomImage: async ({ request }, use) => {
+        const service = new CatApiService(request);
+        const result = await service.searchImages({ limit: 1, order: 'RAND' });
+        const image = result.body[0];
+        await use(image);
     },
-    
-    breedsPage: async ({ catApiService }, use) => {
-        const page = new BreedsPage(catApiService);
-        await use(page);
-    },
-    
-    categoriesPage: async ({ catApiService }, use) => {
-        const page = new CategoriesPage(catApiService);
-        await use(page);
+
+    randomBreed: async ({ request }, use) => {
+        const service = new CatApiService(request);
+        const result = await service.getBreeds();
+        const breeds = result.body;
+        const randomIndex = Math.floor(Math.random() * breeds.length);
+        await use(breeds[randomIndex]);
     }
 });
 
