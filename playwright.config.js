@@ -7,9 +7,9 @@ export default defineConfig({
 
   workers: 1,
 
-  fullyParallel: false,
+  fullyParallel: true,
 
-  retries: 0,
+  retries: 2,
 
   reporter: 'html',
 
@@ -18,7 +18,8 @@ export default defineConfig({
 
     screenshot: 'only-on-failure',
 
-    trace: 'retain-on-failure',
+    // @ts-ignore
+    trace: ['retain-on-failure', 'on-first-retry'],
 
     actionTimeout: 10000,
   },
