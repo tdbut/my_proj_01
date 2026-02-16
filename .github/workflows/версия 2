@@ -1,0 +1,66 @@
+name: playwright api and ui test
+# Когда запускаем
+on:
+  push:
+    branches:
+      - main
+  # ручной запуск
+  workflow_dispatch:
+
+jobs:
+  pwsTests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.1
+      
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6.2.0
+        with:
+          node-version: '18'
+      
+      - name: Установка npm пакетов из package.json
+        run: npm ci
+      
+      - name: Установка браузеров
+        run: npx playwright install --with-deps
+      
+      - name: Запускаем тесты
+        run: npm t
+        continue-on-error: true
+      
+      - name: Проверка наличия результатов
+        run: |
+          echo "=== Checking for test results ==="
+          ls -la || true
+          if [ -d "allure-results" ]; then
+            echo "✓ allure-results found"
+            ls -la allure-results/ || true
+          else
+            echo "✗ allure-results NOT found"
+          fi
+          if [ -d "playwright-report" ]; then
+            echo "✓ playwright-report found"
+          else
+            echo "✗ playwright-report NOT found"
+          fi
+      
+      - name: Сгенерировать allure отчет
+        if: always()
+        run: |
+          if [ -d "allure-results" ] && [ "$(ls -A allure-results)" ]; then
+            npm run allure:report
+          else
+            echo "Skipping allure report - no results found"
+          fi
+        continue-on-error: true
+      
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v6.0.0
+        if: always()
+        with:
+          name: test-results
+          path: |
+            allure-report/
+            allure-results/
+            playwright-report/
