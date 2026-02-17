@@ -4,25 +4,27 @@
 
 ## Содержание
 
-- [Playwright Test Project](#playwright-test-project)
-  - [Содержание](#содержание)
-  - [Структура проекта](#структура-проекта)
-  - [Установка и настройка](#установка-и-настройка)
-  - [Тестовые наборы](#тестовые-наборы)
-    - [1. API-тесты — The Cat API](#1-api-тесты--the-cat-api)
-    - [2. UI-тесты — DemoWebShop](#2-ui-тесты--demowebshop)
-    - [3. Функциональные тесты — RealWorld App](#3-функциональные-тесты--realworld-app)
-  - [Запуск тестов](#запуск-тестов)
-  - [Архитектурные решения](#архитектурные-решения)
-  - [Теги и фильтрация](#теги-и-фильтрация)
+- [Структура проекта](#структура-проекта)
+- [Установка и настройка](#установка-и-настройка)
+- [Тестовые наборы](#тестовые-наборы)
+  - [1. API-тесты — The Cat API](#1-api-тесты--the-cat-api)
+  - [2. UI-тесты — DemoWebShop](#2-ui-тесты--demowebshop)
+  - [3. Функциональные тесты — RealWorld App](#3-функциональные-тесты--realworld-app)
+- [Запуск тестов](#запуск-тестов)
+- [Архитектурные решения](#архитектурные-решения)
+- [Теги и фильтрация](#теги-и-фильтрация)
+- [CI/CD — GitHub Actions](#cicd--github-actions)
 
 ## Структура проекта
 
 ```
 project/
+├── .github/
+│   └── workflows/
+│       └── main.yml               # GitHub Actions workflow (Allure + Telegram)
 ├── fixtures/
-│   ├── api.fixtures.js          # Фикстуры для API-тестов (apiRequest, randomImage, randomBreed)
-│   └── ui.fixtures.js           # Фикстуры для UI-тестов (basePage, registerPage, productPage, cartPage)
+│   ├── api.fixtures.js            # Фикстуры для API-тестов (apiRequest, randomImage, randomBreed)
+│   └── ui.fixtures.js             # Фикстуры для UI-тестов (basePage, registerPage, productPage, cartPage)
 ├── src/
 │   ├── helpers/
 │   │   ├── data.generator.js    # Генератор данных для API-тестов
@@ -43,6 +45,11 @@ project/
 │   ├── uiTests.spec.js          # UI-тесты DemoWebShop
 │   └── page.object.tests.spec.js # Функциональные тесты RealWorld
 └── playwright.config.js
+├── screenshots/                   # Скриншоты для README
+│   ├── allure-report.png
+│   ├── allure-testops.png
+│   ├── github-actions.png
+│   └── telegram.png
 ```
 
 ## Установка и настройка
@@ -175,3 +182,72 @@ npx playwright show-report
 | `@cart` | Корзина |
 | `@navigation` | Навигация |
 | `@footer` | Футер |
+
+## CI/CD — GitHub Actions
+
+Тесты запускаются автоматически через GitHub Actions при push в `main`/`develop` и при pull request.
+
+### Что делает workflow
+
+```
+push/PR → checkout → Node.js 20 → npm ci → install Chromium
+        → API tests → UI tests → Page Object tests
+        → Allure Report → GitHub Pages → Allure TestOps
+        → Telegram notification
+```
+
+Каждый тестовый набор запускается отдельным шагом с `continue-on-error: true`, чтобы падение одного набора не блокировало выполнение остальных.
+
+### GitHub Actions — результаты прогонов
+
+<p align="center">
+  <img src="screenshots/github-actions.png" alt="GitHub Actions" width="800"/>
+</p>
+
+### Allure Report (GitHub Pages)
+
+Отчёт публикуется на GitHub Pages с сохранением истории запусков: https://tdbut.github.io/my_proj_01/
+
+<p align="center">
+  <img src="screenshots/allure-report.png" alt="Allure Report" width="800"/>
+</p>
+
+- 15 тестов, 100% passed
+- Тренды прогонов (графики справа)
+- Suites, Timeline, Behaviors, Graphs
+
+### Allure TestOps
+
+Результаты автоматически загружаются в [Allure TestOps](https://allure.autotests.cloud) через `allurectl`. Тест-кейсы создаются из автотестов, запуски привязываются к CI.
+
+<p align="center">
+  <img src="screenshots/allure-testops.png" alt="Allure TestOps" width="800"/>
+</p>
+
+- 15 активных тест-кейсов
+- 100% автоматизация
+- Дашборд с трендами запусков
+
+### Telegram-уведомления
+
+После каждого прогона бот отправляет уведомление со статусом и ссылками на Allure Report и GitHub Actions.
+
+<p align="center">
+  <img src="screenshots/telegram.png" alt="Telegram notification" width="400"/>
+</p>
+
+### Как запустить вручную
+
+1. Перейти в **Actions** → **Playwright Tests**
+2. Нажать **Run workflow**
+3. Выбрать ветку → **Run workflow**
+
+### Secrets (Settings → Secrets → Actions)
+
+| Secret | Описание |
+|--------|----------|
+| `TELEGRAM_BOT_TOKEN` | Токен Telegram-бота от @BotFather |
+| `TELEGRAM_CHAT_ID` | Chat ID для уведомлений |
+| `ALLURE_TESTOPS_URL` | `https://allure.autotests.cloud` |
+| `ALLURE_TESTOPS_TOKEN` | API-токен Allure TestOps |
+| `ALLURE_TESTOPS_PROJECT_ID` | ID проекта в Allure TestOps |
