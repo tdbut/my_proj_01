@@ -1,0 +1,2 @@
+User logged in: testuser17713196148553530@example.com
+Product page components verified
