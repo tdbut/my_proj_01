@@ -18,7 +18,7 @@ export class DataGenerator {
     }
 
     static getRandomCategoryId() {
-        const categories = [1, 2, 3, 4, 5, 7]; // boxes, clothes, hats, sinks, space, sunglasses
+        const categories = [1, 2, 3, 4, 5, 7];
         return categories[Math.floor(Math.random() * categories.length)];
     }
 

@@ -1,222 +1,69 @@
-import { test } from '@playwright/test';
+const DEBUG = process.env.DEBUG === 'true';
 
 export class CatApiService {
-    constructor(request, apiKey = null) {
+    constructor(request, baseURL) {
         this.request = request;
-        this.baseURL = 'https://api.thecatapi.com/v1';
-        this.apiKey = apiKey || process.env.CAT_API_KEY;
+        this.baseURL = baseURL || process.env.CAT_API_URL || 'https://api.thecatapi.com/v1';
+        this.apiKey = process.env.CAT_API_KEY || '';
     }
 
-    getHeaders() {
-        return this.apiKey ? { 'x-api-key': this.apiKey } : {};
+    _headers() {
+        const headers = { 'Content-Type': 'application/json' };
+        if (this.apiKey) {
+            headers['x-api-key'] = this.apiKey;
+        }
+        return headers;
     }
 
-    async searchImages(params = {}, retries = 3) {
-        return test.step('GET /images/search', async () => {
-            let lastError;
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    // ИСПРАВЛЕНО: правильное формирование URL
-                    const queryString = Object.keys(params).length > 0 
-                        ? '?' + new URLSearchParams(params).toString()
-                        : '';
-                    const url = `${this.baseURL}/images/search${queryString}`;
-                    
-                    const response = await this.request.get(url, {
-                        headers: this.getHeaders(),
-                        timeout: 10000
-                    });
-                    
-                    if (response.status() >= 500 && i < retries - 1) {
-                        console.log(`Attempt ${i + 1}: Server error, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        continue;
-                    }
-                    
-                    let body = null;
-                    if (response.ok()) {
-                        body = await response.json();
-                    }
-                    
-                    return { 
-                        response, 
-                        body,
-                        status: response.status(),
-                        headers: response.headers()
-                    };
-                } catch (error) {
-                    lastError = error;
-                    if (i < retries - 1) {
-                        console.log(`Attempt ${i + 1} failed: ${error.message}, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
+    async _get(endpoint, params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const url = `${this.baseURL}${endpoint}${queryString ? '?' + queryString : ''}`;
+
+        let lastError;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const response = await this.request.get(url, {
+                    headers: this._headers(),
+                });
+
+                const body = await response.json().catch(() => null);
+
+                return {
+                    status: response.status(),
+                    body,
+                    headers: response.headers(),
+                    response,
+                };
+            } catch (error) {
+                lastError = error;
+                if (DEBUG) {
+                    console.log(`Attempt ${attempt} failed for ${endpoint}: ${error.message}`);
+                }
+                if (attempt < 3) {
+                    await new Promise((r) => setTimeout(r, 1000 * attempt));
                 }
             }
-            
-            throw lastError || new Error('Max retries reached');
-        });
+        }
+        throw lastError;
     }
 
-    async getImageById(imageId, retries = 3) {
-        return test.step(`GET /images/${imageId}`, async () => {
-            let lastError;
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    // ИСПРАВЛЕНО: обычные скобки вместо литералов
-                    const response = await this.request.get(
-                        `${this.baseURL}/images/${imageId}`,
-                        {
-                            headers: this.getHeaders(),
-                            timeout: 10000
-                        }
-                    );
-                    
-                    if (response.status() >= 500 && i < retries - 1) {
-                        console.log(`Attempt ${i + 1}: Server error, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        continue;
-                    }
-                    
-                    let body = null;
-                    try {
-                        body = await response.json();
-                    } catch (e) {
-                        // Response может быть не JSON
-                    }
-                    
-                    return { 
-                        response, 
-                        body,
-                        status: response.status(),
-                        headers: response.headers()
-                    };
-                } catch (error) {
-                    lastError = error;
-                    if (i < retries - 1) {
-                        console.log(`Attempt ${i + 1} failed: ${error.message}, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                }
-            }
-            
-            throw lastError || new Error('Max retries reached');
-        });
+    async searchImages(params = {}) {
+        return this._get('/images/search', params);
     }
 
-    async getBreeds(retries = 3) {
-        return test.step('GET /breeds', async () => {
-            let lastError;
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    // ИСПРАВЛЕНО: обычные скобки
-                    const response = await this.request.get(
-                        `${this.baseURL}/breeds`,
-                        {
-                            headers: this.getHeaders(),
-                            timeout: 10000
-                        }
-                    );
-                    
-                    if (response.status() >= 500 && i < retries - 1) {
-                        console.log(`Attempt ${i + 1}: Server error, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        continue;
-                    }
-                    
-                    let body = null;
-                    if (response.ok()) {
-                        body = await response.json();
-                    }
-                    
-                    return { 
-                        response, 
-                        body,
-                        status: response.status(),
-                        headers: response.headers()
-                    };
-                } catch (error) {
-                    lastError = error;
-                    if (i < retries - 1) {
-                        console.log(`Attempt ${i + 1} failed: ${error.message}, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                }
-            }
-            
-            throw lastError || new Error('Max retries reached');
-        });
+    async getImageById(imageId) {
+        return this._get(`/images/${imageId}`);
     }
 
-    async getCategories(retries = 3) {
-        return test.step('GET /categories', async () => {
-            let lastError;
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    // ИСПРАВЛЕНО: обычные скобки
-                    const response = await this.request.get(
-                        `${this.baseURL}/categories`,
-                        {
-                            headers: this.getHeaders(),
-                            timeout: 10000
-                        }
-                    );
-                    
-                    if (response.status() >= 500 && i < retries - 1) {
-                        console.log(`Attempt ${i + 1}: Server error, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        continue;
-                    }
-                    
-                    let body = null;
-                    if (response.ok()) {
-                        body = await response.json();
-                    }
-                    
-                    return { 
-                        response, 
-                        body,
-                        status: response.status(),
-                        headers: response.headers()
-                    };
-                } catch (error) {
-                    lastError = error;
-                    if (i < retries - 1) {
-                        console.log(`Attempt ${i + 1} failed: ${error.message}, retrying...`);
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                }
-            }
-            
-            throw lastError || new Error('Max retries reached');
-        });
+    async getBreeds() {
+        return this._get('/breeds');
+    }
+
+    async getCategories() {
+        return this._get('/categories');
     }
 
     async searchImagesByBreed(breedId, limit = 5) {
-        return test.step(`GET /images/search?breed_ids=${breedId}`, async () => {
-            // ИСПРАВЛЕНО: обычные скобки
-            const response = await this.request.get(
-                `${this.baseURL}/images/search?breed_ids=${breedId}&limit=${limit}`,
-                {
-                    headers: this.getHeaders(),
-                    timeout: 10000
-                }
-            );
-            
-            let body = null;
-            if (response.ok()) {
-                body = await response.json();
-            }
-            
-            return { 
-                response, 
-                body,
-                status: response.status(),
-                headers: response.headers()
-            };
-        });
+        return this._get('/images/search', { breed_ids: breedId, limit });
     }
 }

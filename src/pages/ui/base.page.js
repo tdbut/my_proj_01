@@ -1,7 +1,6 @@
 export class BasePage {
     constructor(page) {
         this.page = page;
-        this.baseURL = 'https://demowebshop.tricentis.com';
 
         this.header = {
             container: page.locator('.header'),
@@ -41,31 +40,19 @@ export class BasePage {
     }
 
     async goto(path = '/') {
-        await this.page.goto(`${this.baseURL}${path}`);
+        await this.page.goto(path);
     }
 
     async verifyHeaderLogo() {
-        const logo = this.header.logo;
-        return {
-            logo,
-            isVisible: await logo.isVisible(),
-        };
+        return { logo: this.header.logo, isVisible: await this.header.logo.isVisible() };
     }
 
     async verifySearchBox() {
-        const searchBox = this.header.searchBox;
-        return {
-            searchBox,
-            isVisible: await searchBox.isVisible(),
-        };
+        return { searchBox: this.header.searchBox, isVisible: await this.header.searchBox.isVisible() };
     }
 
     async verifySearchButton() {
-        const button = this.header.searchButton;
-        return {
-            button,
-            isVisible: await button.isVisible(),
-        };
+        return { button: this.header.searchButton, isVisible: await this.header.searchButton.isVisible() };
     }
 
     getCategoryLinks() {

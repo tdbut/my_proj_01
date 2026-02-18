@@ -1,7 +1,6 @@
 export class CartPage {
     constructor(page) {
         this.page = page;
-        this.baseURL = 'https://demowebshop.tricentis.com';
 
         this.pageTitle = page.locator('.page-title h1');
         this.cartTable = page.getByRole('table').first();
@@ -16,7 +15,7 @@ export class CartPage {
     }
 
     async goto(path = '/cart') {
-        await this.page.goto(`${this.baseURL}${path}`);
+        await this.page.goto(path);
     }
 
     async verifyPageTitle() {

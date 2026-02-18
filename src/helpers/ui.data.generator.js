@@ -14,21 +14,6 @@ export class UIDataGenerator {
         return password;
     }
 
-    static getRandomUserData() {
-        const timestamp = Date.now();
-        return {
-            firstName: `First${timestamp}`,
-            lastName: `Last${timestamp}`,
-            email: this.getRandomEmail(),
-            password: this.getRandomPassword(),
-            company: `Company${timestamp}`,
-            country: 'United States',
-            city: `City${timestamp}`,
-            address1: `${Math.floor(Math.random() * 9999)} Main St`,
-            zipCode: `${Math.floor(Math.random() * 90000) + 10000}`,
-            phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`
-        };
-    }
     static getRandomString(length = 10) {
         const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
@@ -37,6 +22,7 @@ export class UIDataGenerator {
         }
         return result;
     }
+
     static getRandomProductQuantity(min = 1, max = 5) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
@@ -58,7 +44,7 @@ export class UIDataGenerator {
         return {
             title: titles[Math.floor(Math.random() * titles.length)],
             text: texts[Math.floor(Math.random() * texts.length)],
-            rating: Math.floor(Math.random() * 3) + 3 // 3-5 stars
+            rating: Math.floor(Math.random() * 3) + 3
         };
     }
 }

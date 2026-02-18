@@ -1,7 +1,6 @@
 export class RegisterPage {
     constructor(page) {
         this.page = page;
-        this.baseURL = 'https://demowebshop.tricentis.com';
 
         this.genderMale = page.locator('#gender-male');
         this.genderFemale = page.locator('#gender-female');
@@ -16,7 +15,7 @@ export class RegisterPage {
     }
 
     async goto() {
-        await this.page.goto(`${this.baseURL}/register`);
+        await this.page.goto('/register');
     }
 
     async register(userData) {

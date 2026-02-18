@@ -1,40 +1,41 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
-
-
 export default defineConfig({
   testDir: './tests',
-
   workers: 1,
-
   fullyParallel: true,
-
   testMatch: '**/*.spec.js',
-  
   retries: 2,
-
-  reporter: 'html',
-
+  reporter: [['list'], ['html'], ['allure-playwright']],
   use: {
-    baseURL: 'https://realworld.qa.guru',
-
     screenshot: 'only-on-failure',
-
-    // @ts-ignore
-    trace:  'on-first-retry',
-
+    trace: 'on-first-retry',
     actionTimeout: 10000,
   },
-
   projects: [
     {
-      name: 'chromium',
+      name: 'api',
+      testMatch: 'api.spec.js',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'ui-demowebshop',
+      testMatch: 'uiTests.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://demowebshop.tricentis.com',
+      },
+    },
+    {
+      name: 'realworld',
+      testMatch: 'page.object.tests.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://realworld.qa.guru',
+      },
+    },
   ],
-
   timeout: 30000,
-
   expect: {
     timeout: 5000,
   },
