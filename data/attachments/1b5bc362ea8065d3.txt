@@ -1,2 +1,0 @@
-User logged in: testuser17713225130535993@example.com
-Footer components verified

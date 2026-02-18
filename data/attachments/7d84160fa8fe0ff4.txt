@@ -1,2 +1,0 @@
-User logged in: testuser17713224944678265@example.com
-Header components verified
